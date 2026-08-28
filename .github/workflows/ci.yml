@@ -18,8 +18,15 @@ jobs:
           version="$(dotnet --version)"
           echo "Selected SDK: $version"
           [[ "$version" == 8.0.* ]]
-      - run: dotnet restore BKE.Desktop.UpdaterClient.sln
-      - run: dotnet build BKE.Desktop.UpdaterClient.sln --configuration Release --no-restore
+      - name: Restore library and tests
+        run: |
+          dotnet restore src/BKE.Desktop.UpdaterClient/BKE.Desktop.UpdaterClient.csproj
+          dotnet restore tests/BKE.Desktop.UpdaterClient.Tests/BKE.Desktop.UpdaterClient.Tests.csproj
+      - name: Build Release
+        run: |
+          dotnet build src/BKE.Desktop.UpdaterClient/BKE.Desktop.UpdaterClient.csproj --configuration Release --no-restore
+          dotnet build tests/BKE.Desktop.UpdaterClient.Tests/BKE.Desktop.UpdaterClient.Tests.csproj --configuration Release --no-restore
+          test -f src/BKE.Desktop.UpdaterClient/bin/Release/net8.0/BKE.Desktop.UpdaterClient.dll
       - name: Test Release
         run: |
           rm -rf TestResults

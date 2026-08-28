@@ -6,7 +6,7 @@
     <Authors>BKE</Authors>
     <Description>Foundation for future BKE updater request and status transport.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/jan2xo/bke-desktop-updater-sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageOutputPath>$(MSBuildThisFileDirectory)../../artifacts/package/</PackageOutputPath>

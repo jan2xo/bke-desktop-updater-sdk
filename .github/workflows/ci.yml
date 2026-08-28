@@ -1,0 +1,55 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+      - name: Verify .NET 8 SDK
+        run: |
+          version="$(dotnet --version)"
+          echo "Selected SDK: $version"
+          [[ "$version" == 8.0.* ]]
+      - run: dotnet restore BKE.Desktop.UpdaterClient.sln
+      - run: dotnet build BKE.Desktop.UpdaterClient.sln --configuration Release --no-restore
+      - name: Test Release
+        run: |
+          rm -rf TestResults
+          dotnet test tests/BKE.Desktop.UpdaterClient.Tests/BKE.Desktop.UpdaterClient.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=results.trx" --results-directory TestResults
+          test -s TestResults/results.trx
+          grep -q 'total="1"' TestResults/results.trx
+      - name: Pack Release
+        run: |
+          rm -rf artifacts
+          dotnet pack src/BKE.Desktop.UpdaterClient/BKE.Desktop.UpdaterClient.csproj --configuration Release --no-restore --output artifacts/package
+      - name: Verify package
+        run: |
+          set -euo pipefail
+          packages=(artifacts/package/*.nupkg)
+          [[ ${#packages[@]} -eq 1 ]]
+          package="${packages[0]}"
+          [[ "$package" == artifacts/package/BKE.Desktop.UpdaterClient.0.1.0.nupkg ]]
+          unzip -l "$package" | tee package-list.txt
+          unzip -l "$package" | grep -q 'README.md'
+          unzip -l "$package" | grep -q 'LICENSE'
+          unzip -l "$package" | grep -q 'lib/net8.0/BKE.Desktop.UpdaterClient.dll'
+          unzip -l "$package" | grep -q 'BKE.Desktop.UpdaterClient.nuspec'
+          unzip -p "$package" BKE.Desktop.UpdaterClient.nuspec > package.nuspec
+          grep -q '<id>BKE.Desktop.UpdaterClient</id>' package.nuspec
+          grep -q '<version>0.1.0</version>' package.nuspec
+          grep -q '<readme>README.md</readme>' package.nuspec
+      - uses: actions/upload-artifact@v7
+        with:
+          name: BKE.Desktop.UpdaterClient-0.1.0
+          path: |
+            artifacts/package/BKE.Desktop.UpdaterClient.0.1.0.nupkg
+            TestResults/results.trx
+            package-list.txt
